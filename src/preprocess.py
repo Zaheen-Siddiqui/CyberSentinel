@@ -1,10 +1,10 @@
 """
 Preprocessing module for network traffic data
 This module contains shared functions for cleaning and preparing data
+Note: Feature encoding is now handled by sklearn pipelines in the model files
 """
 
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 
 
 def load_csv(file_path):

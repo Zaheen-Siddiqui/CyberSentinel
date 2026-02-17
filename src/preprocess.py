@@ -103,3 +103,4 @@ def convert_labels_to_binary(labels):
     """
     binary_labels = labels.apply(lambda x: 'Harmless' if str(x).strip().lower() == 'normal' else 'Threat')
     return binary_labels
+

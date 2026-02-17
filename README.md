@@ -37,7 +37,50 @@ CyberSentinel/
 └── README.md                       # Project documentation
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start Guide
+
+Get CyberSentinel running in 5 minutes!
+
+### Step 1: Install Dependencies (1 minute)
+
+Open a terminal in the project directory and run:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Step 2: Get Training Data (2 minutes)
+
+1. Download NSL-KDD dataset from: https://www.unb.ca/cic/datasets/nsl.html
+2. Extract **KDDTrain+.csv**
+3. Place it in `data/train/` directory
+
+### Step 3: Train the Model (1 minute)
+
+Run the training script:
+
+```bash
+python src/train_model.py
+```
+
+Wait for training to complete. You'll see accuracy metrics when done.
+
+### Step 4: Start the Web App (30 seconds)
+
+Launch the Flask application:
+
+```bash
+python app.py
+```
+
+### Step 5: Use the Classifier (30 seconds)
+
+1. Open browser: http://127.0.0.1:5000
+2. Upload a CSV file with network traffic data
+3. Click "Classify Traffic"
+4. View your results!
+
+## 📋 Detailed Setup and Usage
 
 ### Prerequisites
 
@@ -113,7 +156,51 @@ python src/predict.py data/test/sample_input.csv
 
 This will output predictions to a new CSV file with "_predictions" suffix.
 
-## 📊 CSV File Requirements
+## 📊 NSL-KDD Dataset Information
+
+### Overview
+Each row in the **NSL-KDD dataset** represents **one network connection (session)**. The dataset is used to classify whether the connection is:
+- **Normal (Harmless Traffic)**
+- **Attack (Malicious Activity)**
+
+### Label/Class Values
+The `label` represents the outcome of the connection:
+- ✅ **normal**: Legitimate, harmless network traffic
+- ❌ **Attack Types**: neptune, smurf, apache2, satan, ipsweep, etc. (representing attack behavior patterns)
+
+### Key Feature Groups
+
+#### 1) Basic Connection Features
+- **duration**: Length of connection in seconds
+- **protocol_type**: tcp, udp, icmp
+- **service**: http, ftp, telnet, smtp, etc.
+- **flag**: Connection status (SF, S0, REJ, etc.)
+- **src_bytes/dst_bytes**: Bytes transferred
+
+#### 2) Content-Based Features
+- **land**: Source and destination IP/port same (suspicious when 1)
+- **wrong_fragment**: Incorrect IP fragments count
+- **urgent**: Urgent packets count
+- **hot**: Sensitive operations count
+- **num_failed_logins**: Failed login attempts
+- **logged_in**: Login success status
+- **num_compromised**: Compromised conditions detected
+- **root_shell**: Root shell obtained (strong attack indicator)
+
+#### 3) Time-Based Traffic Features (last 2 seconds)
+- **count**: Connections to same host
+- **srv_count**: Connections to same service
+- **serror_rate**: SYN error percentage
+- **rerror_rate**: REJ error percentage
+- **same_srv_rate**: Same service connection fraction
+- **diff_srv_rate**: Different service connection fraction
+
+#### 4) Host-Based Traffic Features (last 100 connections)
+- **dst_host_count**: Connections to same destination host
+- **dst_host_srv_count**: Same service connections on host
+- Various rate calculations for error detection
+
+### CSV File Requirements
 
 Your input CSV file should:
 - Contain the same features as the training data
@@ -121,13 +208,18 @@ Your input CSV file should:
 - Include numerical and/or categorical features
 - **Not require** a label column (the model will predict this)
 
-Example features might include:
-- Protocol type
-- Service
-- Flag
-- Duration
-- Bytes sent/received
-- etc.
+### Value Ranges & Interpretation
+- **Binary fields**: 0 or 1
+- **Rate fields**: 0.0 to 1.0
+- **Count fields**: Non-negative integers
+- **Byte fields**: Non-negative integers
+- **Categorical fields**: Must be encoded before ML
+
+### Recommended Preprocessing
+- Encode categorical features (`protocol_type`, `service`, `flag`)
+- Normalize numeric features
+- Drop `difficulty` column
+- Convert to binary labels: normal → 0, attack → 1
 
 ## 🔍 How It Works
 
@@ -154,6 +246,23 @@ Example features might include:
 - **pandas** - Data manipulation
 - **joblib** - Model serialization
 - **HTML** - Web interface
+
+## 🔧 Troubleshooting
+
+**Problem:** Model not found error  
+**Solution:** Make sure you completed training (Step 3 in Quick Start)
+
+**Problem:** Training data not found  
+**Solution:** Ensure KDDTrain+.csv is in `data/train/` directory
+
+**Problem:** CSV upload error  
+**Solution:** Verify your CSV has the same features as training data
+
+**Problem:** Categorical encoding errors  
+**Solution:** Ensure categorical features (protocol_type, service, flag) have valid values
+
+**Problem:** Prediction accuracy issues  
+**Solution:** Check data preprocessing and feature normalization
 
 ## ⚠️ Limitations
 

@@ -45,7 +45,8 @@ data/test/random_forest/*.csv
 data/test/ensemble/*.csv
 model/xgboost/*.pkl
 *.pkl
-model\cascade
+
+model/cascade
 # IDE
 .vscode/
 .idea/

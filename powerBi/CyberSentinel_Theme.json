@@ -1,0 +1,68 @@
+{
+  "name": "CyberSentinel Security Theme",
+  "dataColors": [
+    "#2ECC71",
+    "#E74C3C",
+    "#3498DB",
+    "#F39C12",
+    "#9B59B6",
+    "#1ABC9C",
+    "#E67E22",
+    "#95A5A6",
+    "#34495E",
+    "#16A085"
+  ],
+  "background": "#F8F9FA",
+  "foreground": "#2C3E50",
+  "tableAccent": "#3498DB",
+  "good": "#2ECC71",
+  "neutral": "#95A5A6",
+  "bad": "#E74C3C",
+  "maximum": "#E74C3C",
+  "center": "#3498DB",
+  "minimum": "#2ECC71",
+  "null": "#CCCCCC",
+  "textClasses": {
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 16,
+      "color": "#2C3E50"
+    },
+    "header": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 13,
+      "color": "#2C3E50"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#34495E"
+    },
+    "callout": {
+      "fontFace": "Segoe UI",
+      "fontSize": 28,
+      "color": "#2C3E50"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{"show": true, "color": {"solid": {"color": "#FFFFFF"}}, "transparency": 0}],
+        "border": [{"show": true, "color": {"solid": {"color": "#D5DBDB"}}, "radius": 4}],
+        "title": [{"show": true, "fontColor": {"solid": {"color": "#2C3E50"}}, "fontSize": 12, "fontFamily": "Segoe UI Semibold", "alignment": "left"}],
+        "visualHeader": [{"show": false}]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [{"color": {"solid": {"color": "#F8F9FA"}}, "transparency": 0}]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{"color": {"solid": {"color": "#2C3E50"}}, "fontSize": 28, "fontFamily": "Segoe UI Semibold"}],
+        "categoryLabels": [{"color": {"solid": {"color": "#34495E"}}, "fontSize": 11, "fontFamily": "Segoe UI"}]
+      }
+    }
+  }
+}

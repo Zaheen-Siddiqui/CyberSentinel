@@ -1,0 +1,224 @@
+// =====================================================================
+// CYBERSENTINEL — POWER QUERY M-CODE
+// =====================================================================
+// HOW TO USE:
+// 1. Open Power BI Desktop → Get Data → Blank Query
+// 2. Click "Advanced Editor" in Home tab
+// 3. DELETE everything in the editor
+// 4. PASTE the entire code block below
+// 5. Update the file path on line 9 to match your CSV location
+// 6. Click Done → Close & Apply
+// =====================================================================
+
+let
+    // ⚠️ CHANGE THIS PATH to where your CSV is saved
+    Source = Csv.Document(File.Contents("C:\Users\YourName\CyberSentinel\cyberssentinel_powerbi_combined.csv"),[Delimiter=",", Columns=45, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+
+    PromoteHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+
+    // ── SET COLUMN TYPES ──
+    TypedColumns = Table.TransformColumnTypes(PromoteHeaders, {
+        {"duration", Int64.Type},
+        {"protocol_type", type text},
+        {"service", type text},
+        {"flag", type text},
+        {"src_bytes", Int64.Type},
+        {"dst_bytes", Int64.Type},
+        {"land", Int64.Type},
+        {"wrong_fragment", Int64.Type},
+        {"urgent", Int64.Type},
+        {"hot", Int64.Type},
+        {"num_failed_logins", Int64.Type},
+        {"logged_in", Int64.Type},
+        {"num_compromised", Int64.Type},
+        {"root_shell", Int64.Type},
+        {"su_attempted", Int64.Type},
+        {"num_root", Int64.Type},
+        {"num_file_creations", Int64.Type},
+        {"count", Int64.Type},
+        {"srv_count", Int64.Type},
+        {"serror_rate", type number},
+        {"srv_serror_rate", type number},
+        {"rerror_rate", type number},
+        {"srv_rerror_rate", type number},
+        {"same_srv_rate", type number},
+        {"diff_srv_rate", type number},
+        {"dst_host_count", Int64.Type},
+        {"dst_host_srv_count", Int64.Type},
+        {"dst_host_same_srv_rate", type number},
+        {"dst_host_diff_srv_rate", type number},
+        {"dst_host_same_src_port_rate", type number},
+        {"actual_label", type text},
+        {"prediction_numeric", Int64.Type},
+        {"model_used", type text},
+        {"correct_prediction", Int64.Type},
+        {"Accuracy", type number},
+        {"Precision", type number},
+        {"Recall", type number},
+        {"FalsePositiveRate", type number},
+        {"F1Score", type number},
+        {"AttackRecall", type number},
+        {"dataset", type text},
+        {"AttackCategory", type text},
+        {"actual_binary", Int64.Type}
+    }),
+
+    // ── ADD HELPER COLUMNS FOR SORTING ──
+    
+    AddModelSort = Table.AddColumn(TypedColumns, "ModelAlgorithmSort", each
+        if [model_used] = "randomforest" then 1
+        else if [model_used] = "svm" then 2
+        else if [model_used] = "xgboost" then 3
+        else 4, Int64.Type),
+
+    AddDatasetSort = Table.AddColumn(AddModelSort, "DatasetSort", each
+        if [dataset] = "KDDTest+" then 1
+        else if [dataset] = "KDDTest-21" then 2
+        else 3, Int64.Type),
+
+    AddPredictionSort = Table.AddColumn(AddDatasetSort, "PredictionSort", each
+        if [prediction_numeric] = 0 then 1
+        else if [prediction_numeric] = 1 then 2
+        else 3, Int64.Type),
+
+    AddCategorySort = Table.AddColumn(AddPredictionSort, "CategorySort", each
+        if [AttackCategory] = "NORMAL" then 0
+        else if [AttackCategory] = "DoS" then 1
+        else if [AttackCategory] = "Probe" then 2
+        else if [AttackCategory] = "R2L" then 3
+        else if [AttackCategory] = "U2R" then 4
+        else 5, Int64.Type),
+
+    // ── ADD LABEL NAMES FOR READABILITY ──
+    
+    AddPredictionLabel = Table.AddColumn(AddCategorySort, "PredictionLabel", each
+        if [prediction_numeric] = 0 then "Normal"
+        else if [prediction_numeric] = 1 then "Attack"
+        else "Unknown", type text),
+
+    AddActualLabel = Table.AddColumn(AddPredictionLabel, "ActualLabel", each
+        if [actual_binary] = 0 then "Normal"
+        else if [actual_binary] = 1 then "Attack"
+        else "Unknown", type text),
+
+    AddModelAlgorithm = Table.AddColumn(AddActualLabel, "ModelAlgorithm", each
+        Text.Proper([model_used]), type text),
+
+    // ── ADD STAGE 1 & STAGE 2 METRICS FOR CASCADE ──
+    // (If these columns don't exist in the source CSV, they'll be null — that's okay)
+    
+    AddStage1Accuracy = Table.AddColumn(AddModelAlgorithm, "Stage1Accuracy", each
+        try [Stage1_Accuracy] otherwise null, type number),
+
+    AddStage1Recall = Table.AddColumn(AddStage1Accuracy, "Stage1AttackRecall", each
+        try [Stage1_Attack_Recall] otherwise null, type number),
+
+    AddStage2Accuracy = Table.AddColumn(AddStage1Recall, "Stage2Accuracy", each
+        try [Stage2_Accuracy] otherwise null, type number),
+
+    AddCascadeFPR = Table.AddColumn(AddStage2Accuracy, "CascadeFPR", each
+        try [Cascade_FPR] otherwise null, type number),
+
+    AddDecisionPath = Table.AddColumn(AddCascadeFPR, "DecisionPath", each
+        try [decision_path] otherwise "Standard", type text),
+
+    AddStage2PredCategory = Table.AddColumn(AddDecisionPath, "Stage2PredCategory", each
+        try [Stage2_Pred_Category] otherwise [AttackCategory], type text),
+
+    // ── ADD TIME INTELLIGENCE COLUMNS (if timestamp exists) ──
+    // If your CSV has a 'timestamp' or 'datetime' column, add these:
+    
+    AddYear = Table.AddColumn(AddStage2PredCategory, "Year", each
+        try Number.From(Text.Start(Text.From([actual_label]), 4)) otherwise 2024, Int64.Type),
+
+    AddMonth = Table.AddColumn(AddYear, "Month", each
+        try Number.From(Text.Range(Text.From([dataset]), 0, 2)) otherwise 1, Int64.Type),
+
+    AddMonthName = Table.AddColumn(AddMonth, "MonthName", each
+        try {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}{[Month] - 1} otherwise "Unknown", type text),
+
+    AddQuarter = Table.AddColumn(AddMonthName, "Quarter", each
+        "Q" & Text.From(Number.RoundUp([Month] / 3, 0)), type text),
+
+    // ── FILL NULL VALUES ──
+    
+    FillNulls = Table.TransformColumns(
+        AddQuarter,
+        {
+            {"AttackCategory", each if _ = null then "Unknown" else _, type text},
+            {"DecisionPath", each if _ = null then "Standard" else _, type text},
+            {"Stage2PredCategory", each if _ = null then "Unknown" else _, type text}
+        }
+    ),
+
+    // ── REORDER COLUMNS FOR CLARITY ──
+    ReorderedColumns = Table.ReorderColumns(
+        FillNulls,
+        {
+            "duration", "protocol_type", "service", "flag",
+            "src_bytes", "dst_bytes",
+            "actual_label", "actual_binary", "ActualLabel",
+            "prediction_numeric", "PredictionLabel", "model_used", "ModelAlgorithm",
+            "correct_prediction", "dataset",
+            "Accuracy", "Precision", "Recall", "F1Score", "FalsePositiveRate", "AttackRecall",
+            "AttackCategory", "Stage2PredCategory",
+            "Stage1Accuracy", "Stage1AttackRecall", "Stage2Accuracy", "CascadeFPR", "DecisionPath",
+            "Year", "Month", "MonthName", "Quarter",
+            "ModelAlgorithmSort", "DatasetSort", "PredictionSort", "CategorySort"
+        }
+    ),
+
+    // ── FINAL CLEANUP ──
+    RemoveNulls = Table.SelectRows(ReorderedColumns, each
+        [duration] <> null and
+        [actual_label] <> null and
+        [prediction_numeric] <> null and
+        [model_used] <> null
+    )
+
+in
+    RemoveNulls
+
+// =====================================================================
+// NOTES ON COLUMNS IN THE OUTPUT:
+// =====================================================================
+// 
+// NETWORK FEATURES (from KDD dataset):
+//   duration, protocol_type, service, flag, src_bytes, dst_bytes,
+//   land, wrong_fragment, urgent, hot, num_failed_logins, ...
+//
+// ACTUAL / LABEL COLUMNS:
+//   actual_label — original label (normal, neptune, ipsweep, etc.)
+//   actual_binary — 0=Normal, 1=Attack (derived in preprocess.py)
+//   ActualLabel — readable label (Normal or Attack)
+//
+// PREDICTION COLUMNS:
+//   prediction_numeric — 0=Normal, 1=Attack (model output)
+//   PredictionLabel — readable label (Normal or Attack)
+//   correct_prediction — 1 if prediction matches actual, 0 otherwise
+//
+// MODEL COLUMNS:
+//   model_used — algorithm name (randomforest, svm, xgboost)
+//   ModelAlgorithm — title-cased version (RandomForest, SVM, XGBoost)
+//   dataset — test dataset used (KDDTest+, KDDTest-21)
+//
+// METRICS COLUMNS (pre-calculated in Python):
+//   Accuracy, Precision, Recall, F1Score, FalsePositiveRate, AttackRecall
+//
+// ATTACK CLASSIFICATION (for cascade or multiclass):
+//   AttackCategory — broad attack type (Normal, DoS, Probe, R2L, U2R)
+//   Stage2PredCategory — predicted category (from cascade Stage 2)
+//   DecisionPath — path through cascade (Stage1_Normal, Stage2_Attack_Confident, etc.)
+//
+// CASCADE METRICS (XGBoost two-stage flow):
+//   Stage1Accuracy, Stage1AttackRecall, Stage2Accuracy, CascadeFPR
+//
+// SORTING HELPERS:
+//   ModelAlgorithmSort, DatasetSort, PredictionSort, CategorySort
+//   (Used in Power BI to force correct ordering on axes)
+//
+// TIME INTELLIGENCE (optional):
+//   Year, Month, MonthName, Quarter
+//   (Add/modify if your CSV includes timestamps)
+//
+// =====================================================================

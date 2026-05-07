@@ -1,0 +1,327 @@
+// =====================================================================
+// CYBERSENTINEL DASHBOARD — COMPLETE DAX MEASURES
+// =====================================================================
+// HOW TO USE:
+// 1. In Power BI Desktop, right-click in Fields pane → "New measure"
+// 2. Copy each measure block (the part starting with the name = ...)
+// 3. Paste into the formula bar one at a time
+// 4. Press Enter to save each measure
+//
+// Recommended: Create a "_Measures" table first
+//   Home tab → Enter Data → name it "_Measures" → Load
+//   Then create all measures inside that table (clean Fields pane)
+// =====================================================================
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CORE COUNT MEASURES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Records Tested =
+COUNTA(cyberSentinel[duration])
+
+Total Attacks Predicted =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[prediction_numeric] = 1
+)
+
+Total Normal Predicted =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[prediction_numeric] = 0
+)
+
+Unique Attack Types =
+DISTINCTCOUNT(cyberSentinel[AttackCategory])
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ACCURACY & CLASSIFICATION METRICS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avg Test Accuracy =
+CALCULATE(
+    AVERAGE(cyberSentinel[Accuracy])
+)
+
+Correct Predictions =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[correct_prediction] = 1
+)
+
+% Correct =
+DIVIDE([Correct Predictions], [Total Records Tested], 0)
+
+Incorrect Predictions =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[correct_prediction] = 0
+)
+
+Error Rate =
+DIVIDE([Incorrect Predictions], [Total Records Tested], 0)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ATTACK DETECTION METRICS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avg Attack Recall =
+CALCULATE(
+    AVERAGE(cyberSentinel[AttackRecall])
+)
+
+True Positives =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 1,
+    cyberSentinel[prediction_numeric] = 1
+)
+
+False Negatives =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 1,
+    cyberSentinel[prediction_numeric] = 0
+)
+
+False Positives =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 0,
+    cyberSentinel[prediction_numeric] = 1
+)
+
+True Negatives =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 0,
+    cyberSentinel[prediction_numeric] = 0
+)
+
+Avg Precision =
+CALCULATE(
+    AVERAGE(cyberSentinel[Precision])
+)
+
+Avg Recall =
+CALCULATE(
+    AVERAGE(cyberSentinel[Recall])
+)
+
+Avg FPR =
+CALCULATE(
+    AVERAGE(cyberSentinel[FalsePositiveRate]),
+    cyberSentinel[FalsePositiveRate] >= 0
+)
+
+Avg F1_Score =
+CALCULATE(
+    AVERAGE(cyberSentinel[F1Score])
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CLASS DISTRIBUTION METRICS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Actual Attacks =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 1
+)
+
+Actual Normal =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 0
+)
+
+Attack Rate % =
+DIVIDE([Actual Attacks], [Total Records Tested], 0)
+
+Normal Rate % =
+DIVIDE([Actual Normal], [Total Records Tested], 0)
+
+Imbalance Ratio =
+DIVIDE(
+    MAX([Actual Attacks], [Actual Normal]),
+    MIN([Actual Attacks], [Actual Normal]),
+    0
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MODEL COMPARISON MEASURES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Best Model =
+VAR TopModel = TOPN(1, VALUES(cyberSentinel[model_used]), [Avg Test Accuracy], DESC)
+RETURN
+MAXX(TopModel, cyberSentinel[model_used])
+
+Worst Model =
+VAR BottomModel = TOPN(1, VALUES(cyberSentinel[model_used]), [Avg Test Accuracy], ASC)
+RETURN
+MAXX(BottomModel, cyberSentinel[model_used])
+
+Model Count =
+DISTINCTCOUNT(cyberSentinel[model_used])
+
+RF Accuracy =
+CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "randomforest")
+
+SVM Accuracy =
+CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "svm")
+
+XGBoost Accuracy =
+CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "xgboost")
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DATASET COMPARISON MEASURES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TestPlus Records =
+CALCULATE([Total Records Tested], cyberSentinel[dataset] = "KDDTest+")
+
+Test21 Records =
+CALCULATE([Total Records Tested], cyberSentinel[dataset] = "KDDTest-21")
+
+TestPlus Accuracy =
+CALCULATE([Avg Test Accuracy], cyberSentinel[dataset] = "KDDTest+")
+
+Test21 Accuracy =
+CALCULATE([Avg Test Accuracy], cyberSentinel[dataset] = "KDDTest-21")
+
+Dataset Count =
+DISTINCTCOUNT(cyberSentinel[dataset])
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CASCADE-SPECIFIC MEASURES (XGBoost Two-Stage Flow)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Stage1 Binary Accuracy =
+CALCULATE(
+    AVERAGE(cyberSentinel[Stage1Accuracy]),
+    cyberSentinel[model_used] = "xgboost"
+)
+
+Stage1 Attack Detection Rate =
+CALCULATE(
+    AVERAGE(cyberSentinel[Stage1AttackRecall]),
+    cyberSentinel[model_used] = "xgboost"
+)
+
+Stage2 Category Accuracy =
+CALCULATE(
+    AVERAGE(cyberSentinel[Stage2Accuracy]),
+    cyberSentinel[model_used] = "xgboost"
+)
+
+Cascade FPR =
+CALCULATE(
+    AVERAGE(cyberSentinel[CascadeFPR]),
+    cyberSentinel[CascadeFPR] >= 0,
+    cyberSentinel[model_used] = "xgboost"
+)
+
+DecisionPath Normal =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[DecisionPath] = "Stage1_Normal",
+    cyberSentinel[model_used] = "xgboost"
+)
+
+DecisionPath Stage2 Confident =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[DecisionPath] = "Stage2_Attack_Confident",
+    cyberSentinel[model_used] = "xgboost"
+)
+
+DecisionPath Stage2 Strong =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[DecisionPath] = "Stage2_Attack_Strong_Stage1",
+    cyberSentinel[model_used] = "xgboost"
+)
+
+DecisionPath Reverted =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[DecisionPath] = "Stage2_Reverted_Normal",
+    cyberSentinel[model_used] = "xgboost"
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ATTACK TYPE ANALYSIS MEASURES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Most Common Attack =
+VAR MostCommon = TOPN(1, VALUES(cyberSentinel[AttackCategory]), COUNTA(cyberSentinel[AttackCategory]), DESC)
+RETURN
+MAXX(MostCommon, cyberSentinel[AttackCategory])
+
+Rarest Attack =
+VAR MostRare = TOPN(1, VALUES(cyberSentinel[AttackCategory]), COUNTA(cyberSentinel[AttackCategory]), ASC)
+RETURN
+MAXX(MostRare, cyberSentinel[AttackCategory])
+
+Attack Classification Accuracy =
+CALCULATE(
+    AVERAGE(cyberSentinel[Accuracy]),
+    cyberSentinel[actual_binary] = 1
+)
+
+Attacks Misclassified as Normal =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 1,
+    cyberSentinel[prediction_numeric] = 0
+)
+
+Normal Misclassified as Attack =
+CALCULATE(
+    COUNTA(cyberSentinel[duration]),
+    cyberSentinel[actual_binary] = 0,
+    cyberSentinel[prediction_numeric] = 1
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HELPER / FORMATTING MEASURES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Accuracy Formatted =
+FORMAT([Avg Test Accuracy], "0.00%")
+
+Attack Recall Formatted =
+FORMAT([Avg Attack Recall], "0.00%")
+
+FPR Formatted =
+FORMAT([Avg FPR], "0.00%")
+
+Records Formatted =
+FORMAT([Total Records Tested], "#,##0")
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// YEAR / TIME INTELLIGENCE MEASURES (if applicable)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Year Count =
+DISTINCTCOUNT(cyberSentinel[Year])
+
+Month Count =
+DISTINCTCOUNT(cyberSentinel[Month])
+
+Records by Year =
+COUNTROWS(
+    SUMMARIZE(cyberSentinel, cyberSentinel[Year])
+)
+

@@ -1,0 +1,302 @@
+# DMBI Power BI Measures
+#
+# How to enter:
+# 1) Power BI Desktop -> Modeling -> New measure
+# 2) Create a blank table first called _Measures (Home -> Enter data)
+# 3) Paste one measure at a time into the formula bar
+# 4) Press Enter after each measure
+#
+# Table names used below:
+# - dmbi_overview_kpis
+# - dmbi_preprocessing_summary
+# - dmbi_class_distribution
+# - dmbi_model_comparison
+# - dmbi_error_analysis
+# - dmbi_confusion_patterns
+# - dmbi_feature_importance
+
+Total Records =
+SUM(dmbi_overview_kpis[Total_Records])
+
+Total Attack Records =
+SUM(dmbi_overview_kpis[Attack_Records])
+
+Total Normal Records =
+SUM(dmbi_overview_kpis[Normal_Records])
+
+Attack Rate % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Attack_Rate_%]), 100, 0)
+
+Average Accuracy % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Accuracy_%]), 100, 0)
+
+Average Precision % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Precision_%]), 100, 0)
+
+Average Recall % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Recall_%]), 100, 0)
+
+Average F1 Score % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[F1_Score_%]), 100, 0)
+
+Average Macro F1 % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Macro_F1_%]), 100, 0)
+
+Average False Positive Rate % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[False_Positive_Rate_%]), 100, 0)
+
+Best Accuracy % =
+DIVIDE(MAX(dmbi_overview_kpis[Accuracy_%]), 100, 0)
+
+Best Precision % =
+DIVIDE(MAX(dmbi_overview_kpis[Precision_%]), 100, 0)
+
+Best Recall % =
+DIVIDE(MAX(dmbi_overview_kpis[Recall_%]), 100, 0)
+
+Best F1 Score % =
+DIVIDE(MAX(dmbi_overview_kpis[F1_Score_%]), 100, 0)
+
+Best Macro F1 % =
+DIVIDE(MAX(dmbi_overview_kpis[Macro_F1_%]), 100, 0)
+
+Lowest False Positive Rate % =
+DIVIDE(MIN(dmbi_overview_kpis[False_Positive_Rate_%]), 100, 0)
+
+Unique Models =
+DISTINCTCOUNT(dmbi_overview_kpis[Model])
+
+Unique Datasets =
+DISTINCTCOUNT(dmbi_overview_kpis[Dataset])
+
+Unique Classes =
+DISTINCTCOUNT(dmbi_class_distribution[Class])
+
+Normal Class Count =
+CALCULATE(
+    SUM(dmbi_class_distribution[Count]),
+    dmbi_class_distribution[Class] = "normal"
+)
+
+Attack Class Count =
+CALCULATE(
+    SUM(dmbi_class_distribution[Count]),
+    dmbi_class_distribution[Class] <> "normal"
+)
+
+Normal Class Share % =
+DIVIDE([Normal Class Count], [Total Records], 0)
+
+Attack Class Share % =
+DIVIDE([Attack Class Count], [Total Records], 0)
+
+Total Missing Values =
+SUM(dmbi_preprocessing_summary[Missing_Values])
+
+Total Duplicate Rows =
+SUM(dmbi_preprocessing_summary[Duplicate_Rows])
+
+Average Numerical Features =
+AVERAGE(dmbi_preprocessing_summary[Numerical_Features])
+
+Average Categorical Features =
+AVERAGE(dmbi_preprocessing_summary[Categorical_Features])
+
+Average Imbalance Ratio =
+AVERAGE(dmbi_preprocessing_summary[Imbalance_Ratio])
+
+Top Feature Importance =
+MAX(dmbi_feature_importance[Importance_Score])
+
+Average Feature Importance =
+AVERAGE(dmbi_feature_importance[Importance_Score])
+
+Average Model Accuracy % =
+DIVIDE(AVERAGE(dmbi_model_comparison[Accuracy_%]), 100, 0)
+
+Average Model Precision % =
+DIVIDE(AVERAGE(dmbi_model_comparison[Precision_%]), 100, 0)
+
+Average Model Recall % =
+DIVIDE(AVERAGE(dmbi_model_comparison[Recall_%]), 100, 0)
+
+Average Model F1 Score % =
+DIVIDE(AVERAGE(dmbi_model_comparison[F1_Score_%]), 100, 0)
+
+Total True Positives =
+SUM(dmbi_model_comparison[True_Positives])
+
+Total False Positives =
+SUM(dmbi_model_comparison[False_Positives])
+
+Total False Negatives =
+SUM(dmbi_model_comparison[False_Negatives])
+
+Total True Negatives =
+SUM(dmbi_model_comparison[True_Negatives])
+
+Overall Accuracy % =
+DIVIDE(
+    [Total True Positives] + [Total True Negatives],
+    [Total True Positives] + [Total True Negatives] + [Total False Positives] + [Total False Negatives],
+    0
+)
+
+Overall Precision % =
+DIVIDE(
+    [Total True Positives],
+    [Total True Positives] + [Total False Positives],
+    0
+)
+
+Overall Recall % =
+DIVIDE(
+    [Total True Positives],
+    [Total True Positives] + [Total False Negatives],
+    0
+)
+
+Overall F1 Score % =
+DIVIDE(
+    2 * [Overall Precision %] * [Overall Recall %],
+    [Overall Precision %] + [Overall Recall %],
+    0
+)
+
+Overall False Positive Rate % =
+DIVIDE(
+    [Total False Positives],
+    [Total False Positives] + [Total True Negatives],
+    0
+)
+
+Average Error Rate % =
+DIVIDE(AVERAGE(dmbi_error_analysis[Error_Rate_%]), 100, 0)
+
+Total Errors =
+SUM(dmbi_error_analysis[Errors])
+
+Total Correct Predictions =
+SUM(dmbi_error_analysis[Correct_Predictions])
+
+Error Rate % =
+DIVIDE(
+    [Total Errors],
+    [Total Errors] + [Total Correct Predictions],
+    0
+)
+
+Average Validation Accuracy % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Accuracy_%]), 100, 0)
+
+Average Validation Recall % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Attack_Recall_%]), 100, 0)
+
+Average Validation Macro F1 % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[Macro_F1_%]), 100, 0)
+
+Average Validation FPR % =
+DIVIDE(AVERAGE(dmbi_overview_kpis[False_Positive_Rate_%]), 100, 0)
+
+Best Accuracy Model =
+VAR BestRow =
+    TOPN(
+        1,
+        dmbi_overview_kpis,
+        dmbi_overview_kpis[Accuracy_%],
+        DESC,
+        dmbi_overview_kpis[Model],
+        ASC
+    )
+RETURN
+    CONCATENATEX(BestRow, dmbi_overview_kpis[Model], ", ")
+
+Best Recall Model =
+VAR BestRow =
+    TOPN(
+        1,
+        dmbi_overview_kpis,
+        dmbi_overview_kpis[Recall_%],
+        DESC,
+        dmbi_overview_kpis[Model],
+        ASC
+    )
+RETURN
+    CONCATENATEX(BestRow, dmbi_overview_kpis[Model], ", ")
+
+Best F1 Model =
+VAR BestRow =
+    TOPN(
+        1,
+        dmbi_overview_kpis,
+        dmbi_overview_kpis[F1_Score_%],
+        DESC,
+        dmbi_overview_kpis[Model],
+        ASC
+    )
+RETURN
+    CONCATENATEX(BestRow, dmbi_overview_kpis[Model], ", ")
+
+Best Macro F1 Model =
+VAR BestRow =
+    TOPN(
+        1,
+        dmbi_overview_kpis,
+        dmbi_overview_kpis[Macro_F1_%],
+        DESC,
+        dmbi_overview_kpis[Model],
+        ASC
+    )
+RETURN
+    CONCATENATEX(BestRow, dmbi_overview_kpis[Model], ", ")
+
+Lowest FPR Model =
+VAR BestRow =
+    TOPN(
+        1,
+        dmbi_overview_kpis,
+        dmbi_overview_kpis[False_Positive_Rate_%],
+        ASC,
+        dmbi_overview_kpis[Model],
+        ASC
+    )
+RETURN
+    CONCATENATEX(BestRow, dmbi_overview_kpis[Model], ", ")
+
+Most Frequent Class =
+VAR BestRow =
+    TOPN(
+        1,
+        dmbi_class_distribution,
+        dmbi_class_distribution[Count],
+        DESC,
+        dmbi_class_distribution[Class],
+        ASC
+    )
+RETURN
+    CONCATENATEX(BestRow, dmbi_class_distribution[Class], ", ")
+
+Most Frequent Class Count =
+MAX(dmbi_class_distribution[Count])
+
+Highest Error Rate % =
+DIVIDE(MAX(dmbi_error_analysis[Error_Rate_%]), 100, 0)
+
+Most Error Prone Class =
+VAR WorstRow =
+    TOPN(
+        1,
+        dmbi_error_analysis,
+        dmbi_error_analysis[Error_Rate_%],
+        DESC,
+        dmbi_error_analysis[Actual_Class],
+        ASC
+    )
+RETURN
+    CONCATENATEX(WorstRow, dmbi_error_analysis[Actual_Class], ", ")
+
+Most Common Misclassification Count =
+MAX(dmbi_confusion_patterns[Misclassification_Count])
+
+Total Misclassification Flow =
+SUM(dmbi_confusion_patterns[Misclassification_Count])

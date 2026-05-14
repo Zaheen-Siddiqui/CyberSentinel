@@ -1,0 +1,7 @@
+Model,Stage,Task,Output File(s),Validation Accuracy,Validation F1 Score,Macro F1,False Positive Rate (Normal),Attack Recall,TN,FP,FN,TP,Remarks
+Random Forest,Stage 1,Binary Classification (Normal vs Attack),model/cascade/randomforest/stage1_model.pkl,0.9981,0.998,,0.00067,0.9968,13460.0,9.0,38.0,11688.0,Excellent balance
+Random Forest,Stage 2,Attack Category Classification,"stage2_model.pkl, stage2_label_encoder.pkl",,,0.9129883383464154,,,,,,,Good category prediction
+Support Vector Machine,Stage 1,Binary Classification (Normal vs Attack),model/cascade/svm/stage1_model.pkl,0.9729,0.9707,,0.0206,0.9655,13191.0,278.0,405.0,11321.0,Lower than tree models
+Support Vector Machine,Stage 2,Attack Category Classification,"stage2_model.pkl, stage2_label_encoder.pkl",,,0.829674079804575,,,,,,,Convergence warning
+XGBoost,Stage 1,Binary Classification (Normal vs Attack),model/cascade/xgboost/stage1_model.pkl,0.9989,0.9988,,0.00074,0.9985,13459.0,10.0,18.0,11708.0,Best Stage 1 performer
+XGBoost,Stage 2,Attack Category Classification,"stage2_model.pkl, stage2_label_encoder.pkl",,,0.9479409530661176,,,,,,,Best Stage 2 performer

@@ -1,5 +1,5 @@
 // =====================================================================
-// CYBERSENTINEL DASHBOARD — COMPLETE DAX MEASURES
+// cyberssentinel_powerbi_combined DASHBOARD — COMPLETE DAX MEASURES
 // =====================================================================
 // HOW TO USE:
 // 1. In Power BI Desktop, right-click in Fields pane → "New measure"
@@ -18,22 +18,22 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Total Records Tested =
-COUNTA(cyberSentinel[duration])
+COUNTA(cyberssentinel_powerbi_combined[duration])
 
 Total Attacks Predicted =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[prediction_numeric] = 1
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[prediction_numeric] = 1
 )
 
 Total Normal Predicted =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[prediction_numeric] = 0
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[prediction_numeric] = 0
 )
 
 Unique Attack Types =
-DISTINCTCOUNT(cyberSentinel[AttackCategory])
+DISTINCTCOUNT(cyberssentinel_powerbi_combined[AttackCategory])
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -42,13 +42,13 @@ DISTINCTCOUNT(cyberSentinel[AttackCategory])
 
 Avg Test Accuracy =
 CALCULATE(
-    AVERAGE(cyberSentinel[Accuracy])
+    AVERAGE(cyberssentinel_powerbi_combined[Accuracy])
 )
 
 Correct Predictions =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[correct_prediction] = 1
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[correct_prediction] = 1
 )
 
 % Correct =
@@ -56,8 +56,8 @@ DIVIDE([Correct Predictions], [Total Records Tested], 0)
 
 Incorrect Predictions =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[correct_prediction] = 0
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[correct_prediction] = 0
 )
 
 Error Rate =
@@ -69,57 +69,55 @@ DIVIDE([Incorrect Predictions], [Total Records Tested], 0)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Avg Attack Recall =
-CALCULATE(
-    AVERAGE(cyberSentinel[AttackRecall])
-)
+DIVIDE([True Positives], [Actual Attacks], 0)
 
 True Positives =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 1,
-    cyberSentinel[prediction_numeric] = 1
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 1,
+    cyberssentinel_powerbi_combined[prediction_numeric] = 1
 )
 
 False Negatives =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 1,
-    cyberSentinel[prediction_numeric] = 0
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 1,
+    cyberssentinel_powerbi_combined[prediction_numeric] = 0
 )
 
 False Positives =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 0,
-    cyberSentinel[prediction_numeric] = 1
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 0,
+    cyberssentinel_powerbi_combined[prediction_numeric] = 1
 )
 
 True Negatives =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 0,
-    cyberSentinel[prediction_numeric] = 0
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 0,
+    cyberssentinel_powerbi_combined[prediction_numeric] = 0
 )
 
 Avg Precision =
 CALCULATE(
-    AVERAGE(cyberSentinel[Precision])
+    AVERAGE(cyberssentinel_powerbi_combined[Precision])
 )
 
 Avg Recall =
 CALCULATE(
-    AVERAGE(cyberSentinel[Recall])
+    AVERAGE(cyberssentinel_powerbi_combined[Recall])
 )
 
 Avg FPR =
 CALCULATE(
-    AVERAGE(cyberSentinel[FalsePositiveRate]),
-    cyberSentinel[FalsePositiveRate] >= 0
+    AVERAGE(cyberssentinel_powerbi_combined[FalsePositiveRate]),
+    cyberssentinel_powerbi_combined[FalsePositiveRate] >= 0
 )
 
 Avg F1_Score =
 CALCULATE(
-    AVERAGE(cyberSentinel[F1Score])
+    AVERAGE(cyberssentinel_powerbi_combined[F1Score])
 )
 
 
@@ -129,14 +127,14 @@ CALCULATE(
 
 Actual Attacks =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 1
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 1
 )
 
 Actual Normal =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 0
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 0
 )
 
 Attack Rate % =
@@ -152,32 +150,92 @@ DIVIDE(
     0
 )
 
+// Compatibility aliases used by the build guide visuals
+Total Records =
+[Total Records Tested]
+
+Normal Count =
+[Actual Normal]
+
+Attack Count =
+[Actual Attacks]
+
+Avg Accuracy =
+[Avg Test Accuracy]
+
+Category Accuracy =
+[Attack Classification Accuracy]
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MODEL COMPARISON MEASURES
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Best Model =
-VAR TopModel = TOPN(1, VALUES(cyberSentinel[model_used]), [Avg Test Accuracy], DESC)
+// Adjustable weights for model ranking (change values as needed)
+W_Accuracy =
+0.30
+
+W_Precision =
+0.20
+
+W_Recall =
+0.20
+
+W_AttackRecall =
+0.20
+
+W_F1 =
+0.10
+
+W_FPR =
+0.00
+
+Model Composite Score =
+VAR wAcc = [W_Accuracy]
+VAR wPrec = [W_Precision]
+VAR wRec = [W_Recall]
+VAR wAtk = [W_AttackRecall]
+VAR wF1 = [W_F1]
+VAR wFpr = [W_FPR]
+VAR weightSum = wAcc + wPrec + wRec + wAtk + wF1 + wFpr
 RETURN
-MAXX(TopModel, cyberSentinel[model_used])
+DIVIDE(
+    wAcc * [Avg Test Accuracy] +
+    wPrec * [Avg Precision] +
+    wRec * [Avg Recall] +
+    wAtk * [Avg Attack Recall] +
+    wF1 * [Avg F1_Score] +
+    wFpr * (1 - [Avg FPR]),
+    weightSum,
+    0
+)
+
+Best Model =
+VAR TopModel = TOPN(1, VALUES(cyberssentinel_powerbi_combined[model_used]), [Model Composite Score], DESC)
+RETURN
+MAXX(TopModel, cyberssentinel_powerbi_combined[model_used])
+
+Best Model (Accuracy Only) =
+VAR TopModel = TOPN(1, VALUES(cyberssentinel_powerbi_combined[model_used]), [Avg Test Accuracy], DESC)
+RETURN
+MAXX(TopModel, cyberssentinel_powerbi_combined[model_used])
 
 Worst Model =
-VAR BottomModel = TOPN(1, VALUES(cyberSentinel[model_used]), [Avg Test Accuracy], ASC)
+VAR BottomModel = TOPN(1, VALUES(cyberssentinel_powerbi_combined[model_used]), [Avg Test Accuracy], ASC)
 RETURN
-MAXX(BottomModel, cyberSentinel[model_used])
+MAXX(BottomModel, cyberssentinel_powerbi_combined[model_used])
 
 Model Count =
-DISTINCTCOUNT(cyberSentinel[model_used])
+DISTINCTCOUNT(cyberssentinel_powerbi_combined[model_used])
 
 RF Accuracy =
-CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "randomforest")
+CALCULATE([Avg Test Accuracy], cyberssentinel_powerbi_combined[model_used] = "randomforest")
 
 SVM Accuracy =
-CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "svm")
+CALCULATE([Avg Test Accuracy], cyberssentinel_powerbi_combined[model_used] = "svm")
 
 XGBoost Accuracy =
-CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "xgboost")
+CALCULATE([Avg Test Accuracy], cyberssentinel_powerbi_combined[model_used] = "xgboost")
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -185,19 +243,19 @@ CALCULATE([Avg Test Accuracy], cyberSentinel[model_used] = "xgboost")
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 TestPlus Records =
-CALCULATE([Total Records Tested], cyberSentinel[dataset] = "KDDTest+")
+CALCULATE([Total Records Tested], cyberssentinel_powerbi_combined[dataset] = "KDDTest+")
 
 Test21 Records =
-CALCULATE([Total Records Tested], cyberSentinel[dataset] = "KDDTest-21")
+CALCULATE([Total Records Tested], cyberssentinel_powerbi_combined[dataset] = "KDDTest-21")
 
 TestPlus Accuracy =
-CALCULATE([Avg Test Accuracy], cyberSentinel[dataset] = "KDDTest+")
+CALCULATE([Avg Test Accuracy], cyberssentinel_powerbi_combined[dataset] = "KDDTest+")
 
 Test21 Accuracy =
-CALCULATE([Avg Test Accuracy], cyberSentinel[dataset] = "KDDTest-21")
+CALCULATE([Avg Test Accuracy], cyberssentinel_powerbi_combined[dataset] = "KDDTest-21")
 
 Dataset Count =
-DISTINCTCOUNT(cyberSentinel[dataset])
+DISTINCTCOUNT(cyberssentinel_powerbi_combined[dataset])
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -206,55 +264,58 @@ DISTINCTCOUNT(cyberSentinel[dataset])
 
 Stage1 Binary Accuracy =
 CALCULATE(
-    AVERAGE(cyberSentinel[Stage1Accuracy]),
-    cyberSentinel[model_used] = "xgboost"
+    AVERAGE(CascadeModelSummary[Validation Accuracy]),
+    CascadeModelSummary[Stage] = "Stage 1",
+    CascadeModelSummary[Model] = "XGBoost"
 )
 
 Stage1 Attack Detection Rate =
 CALCULATE(
-    AVERAGE(cyberSentinel[Stage1AttackRecall]),
-    cyberSentinel[model_used] = "xgboost"
+    AVERAGE(CascadeModelSummary[Attack Recall]),
+    CascadeModelSummary[Stage] = "Stage 1",
+    CascadeModelSummary[Model] = "XGBoost"
 )
 
 Stage2 Category Accuracy =
 CALCULATE(
-    AVERAGE(cyberSentinel[Stage2Accuracy]),
-    cyberSentinel[model_used] = "xgboost"
+    AVERAGE(CascadeModelSummary[Macro F1]),
+    CascadeModelSummary[Stage] = "Stage 2",
+    CascadeModelSummary[Model] = "XGBoost"
 )
 
 Cascade FPR =
 CALCULATE(
-    AVERAGE(cyberSentinel[CascadeFPR]),
-    cyberSentinel[CascadeFPR] >= 0,
-    cyberSentinel[model_used] = "xgboost"
+    AVERAGE(CascadeModelSummary[False Positive Rate (Normal)]),
+    CascadeModelSummary[Stage] = "Stage 1",
+    CascadeModelSummary[Model] = "XGBoost"
 )
 
 DecisionPath Normal =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[DecisionPath] = "Stage1_Normal",
-    cyberSentinel[model_used] = "xgboost"
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[DecisionPath] = "Stage1_Normal",
+    cyberssentinel_powerbi_combined[model_used] = "xgboost"
 )
 
 DecisionPath Stage2 Confident =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[DecisionPath] = "Stage2_Attack_Confident",
-    cyberSentinel[model_used] = "xgboost"
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[DecisionPath] = "Stage2_Attack_Confident",
+    cyberssentinel_powerbi_combined[model_used] = "xgboost"
 )
 
 DecisionPath Stage2 Strong =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[DecisionPath] = "Stage2_Attack_Strong_Stage1",
-    cyberSentinel[model_used] = "xgboost"
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[DecisionPath] = "Stage2_Attack_Strong_Stage1",
+    cyberssentinel_powerbi_combined[model_used] = "xgboost"
 )
 
 DecisionPath Reverted =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[DecisionPath] = "Stage2_Reverted_Normal",
-    cyberSentinel[model_used] = "xgboost"
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[DecisionPath] = "Stage2_Reverted_Normal",
+    cyberssentinel_powerbi_combined[model_used] = "xgboost"
 )
 
 
@@ -263,33 +324,33 @@ CALCULATE(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Most Common Attack =
-VAR MostCommon = TOPN(1, VALUES(cyberSentinel[AttackCategory]), COUNTA(cyberSentinel[AttackCategory]), DESC)
+VAR MostCommon = TOPN(1, VALUES(cyberssentinel_powerbi_combined[AttackCategory]), COUNTA(cyberssentinel_powerbi_combined[AttackCategory]), DESC)
 RETURN
-MAXX(MostCommon, cyberSentinel[AttackCategory])
+MAXX(MostCommon, cyberssentinel_powerbi_combined[AttackCategory])
 
 Rarest Attack =
-VAR MostRare = TOPN(1, VALUES(cyberSentinel[AttackCategory]), COUNTA(cyberSentinel[AttackCategory]), ASC)
+VAR MostRare = TOPN(1, VALUES(cyberssentinel_powerbi_combined[AttackCategory]), COUNTA(cyberssentinel_powerbi_combined[AttackCategory]), ASC)
 RETURN
-MAXX(MostRare, cyberSentinel[AttackCategory])
+MAXX(MostRare, cyberssentinel_powerbi_combined[AttackCategory])
 
 Attack Classification Accuracy =
 CALCULATE(
-    AVERAGE(cyberSentinel[Accuracy]),
-    cyberSentinel[actual_binary] = 1
+    AVERAGE(cyberssentinel_powerbi_combined[Accuracy]),
+    cyberssentinel_powerbi_combined[actual_binary] = 1
 )
 
 Attacks Misclassified as Normal =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 1,
-    cyberSentinel[prediction_numeric] = 0
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 1,
+    cyberssentinel_powerbi_combined[prediction_numeric] = 0
 )
 
 Normal Misclassified as Attack =
 CALCULATE(
-    COUNTA(cyberSentinel[duration]),
-    cyberSentinel[actual_binary] = 0,
-    cyberSentinel[prediction_numeric] = 1
+    COUNTA(cyberssentinel_powerbi_combined[duration]),
+    cyberssentinel_powerbi_combined[actual_binary] = 0,
+    cyberssentinel_powerbi_combined[prediction_numeric] = 1
 )
 
 
@@ -313,15 +374,17 @@ FORMAT([Total Records Tested], "#,##0")
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // YEAR / TIME INTELLIGENCE MEASURES (if applicable)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NOTE: Year/Month columns not present in current dataset
+// Uncomment below if you add time-based columns to the CSV
 
-Year Count =
-DISTINCTCOUNT(cyberSentinel[Year])
-
-Month Count =
-DISTINCTCOUNT(cyberSentinel[Month])
-
-Records by Year =
-COUNTROWS(
-    SUMMARIZE(cyberSentinel, cyberSentinel[Year])
-)
+// Year Count =
+// DISTINCTCOUNT(cyberssentinel_powerbi_combined[Year])
+//
+// Month Count =
+// DISTINCTCOUNT(cyberssentinel_powerbi_combined[Month])
+//
+// Records by Year =
+// COUNTROWS(
+//     SUMMARIZE(cyberssentinel_powerbi_combined, cyberssentinel_powerbi_combined[Year])
+// )
 

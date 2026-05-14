@@ -1,0 +1,249 @@
+// =====================================================================
+// CASCADE TWO-STAGE ANALYTICS — COMPLETE DAX MEASURES
+// =====================================================================
+// Focus: Final cascade predictions and two-stage performance
+//
+// HOW TO USE:
+// 1. In Power BI Desktop, right-click in Fields pane → "New measure"
+// 2. Copy each measure block (the part starting with the name = ...)
+// 3. Paste into the formula bar one at a time
+// 4. Press Enter to save each measure
+// =====================================================================
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CORE COUNTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Records Tested =
+COUNTA(cyberssentinel_cascade_combined[label])
+
+Actual Attacks =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[actual_binary] = 1
+)
+
+Actual Normal =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[actual_binary] = 0
+)
+
+Attack Rate % =
+DIVIDE([Actual Attacks], [Total Records Tested], 0)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CASCADE BINARY (STAGE 1) PERFORMANCE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avg Cascade Accuracy =
+CALCULATE(
+    AVERAGE(cyberssentinel_cascade_combined[Accuracy])
+)
+
+Cascade Precision =
+CALCULATE(
+    AVERAGE(cyberssentinel_cascade_combined[Precision])
+)
+
+Cascade Recall =
+CALCULATE(
+    AVERAGE(cyberssentinel_cascade_combined[Recall])
+)
+
+Cascade F1 Score =
+CALCULATE(
+    AVERAGE(cyberssentinel_cascade_combined[F1Score])
+)
+
+Cascade Attack Recall =
+CALCULATE(
+    AVERAGE(cyberssentinel_cascade_combined[AttackRecall])
+)
+
+Cascade FPR =
+CALCULATE(
+    AVERAGE(cyberssentinel_cascade_combined[FalsePositiveRate])
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DECISION PATH ANALYSIS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Stage1 Normal Path =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[stage1_decision] = "normal"
+)
+
+Stage1 Attack Path =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[stage1_decision] = "attack_path"
+)
+
+% Stage1 to Stage2 =
+DIVIDE([Stage1 Attack Path], [Total Records Tested], 0)
+
+Stage2 Attack Confident =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[decision_path] = "stage2_attack_confident"
+)
+
+Stage2 Attack Strong Stage1 =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[decision_path] = "stage2_attack_strong_stage1"
+)
+
+Stage2 Reverted Normal =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[decision_path] = "stage2_reverted_normal"
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFUSION MATRIX (FINAL CASCADE)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+True Positives =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[actual_binary] = 1,
+    cyberssentinel_cascade_combined[prediction_numeric] = 1
+)
+
+False Positives =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[actual_binary] = 0,
+    cyberssentinel_cascade_combined[prediction_numeric] = 1
+)
+
+False Negatives =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[actual_binary] = 1,
+    cyberssentinel_cascade_combined[prediction_numeric] = 0
+)
+
+True Negatives =
+CALCULATE(
+    COUNTA(cyberssentinel_cascade_combined[label]),
+    cyberssentinel_cascade_combined[actual_binary] = 0,
+    cyberssentinel_cascade_combined[prediction_numeric] = 0
+)
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MODEL COMPARISON (FINAL CASCADE)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+RF Accuracy =
+CALCULATE([Avg Cascade Accuracy], cyberssentinel_cascade_combined[model_used] = "randomforest")
+
+RF Precision =
+CALCULATE([Cascade Precision], cyberssentinel_cascade_combined[model_used] = "randomforest")
+
+RF Attack Recall =
+CALCULATE([Cascade Attack Recall], cyberssentinel_cascade_combined[model_used] = "randomforest")
+
+SVM Accuracy =
+CALCULATE([Avg Cascade Accuracy], cyberssentinel_cascade_combined[model_used] = "svm")
+
+SVM Precision =
+CALCULATE([Cascade Precision], cyberssentinel_cascade_combined[model_used] = "svm")
+
+SVM Attack Recall =
+CALCULATE([Cascade Attack Recall], cyberssentinel_cascade_combined[model_used] = "svm")
+
+XGBoost Accuracy =
+CALCULATE([Avg Cascade Accuracy], cyberssentinel_cascade_combined[model_used] = "xgboost")
+
+XGBoost Precision =
+CALCULATE([Cascade Precision], cyberssentinel_cascade_combined[model_used] = "xgboost")
+
+XGBoost Attack Recall =
+CALCULATE([Cascade Attack Recall], cyberssentinel_cascade_combined[model_used] = "xgboost")
+
+Best Cascade Model =
+VAR Scores = 
+SELECTCOLUMNS(
+    VALUES(cyberssentinel_cascade_combined[model_used]),
+    "@Model", cyberssentinel_cascade_combined[model_used],
+    "@Score", [XGBoost Attack Recall]  // Can swap with Precision or F1 as needed
+)
+VAR TopModel = TOPN(1, Scores, [@Score], DESC)
+RETURN
+MAXX(TopModel, [@Model])
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DATASET COMPARISON
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TestPlus Records =
+CALCULATE([Total Records Tested], cyberssentinel_cascade_combined[dataset] = "KDDTest+")
+
+Test21 Records =
+CALCULATE([Total Records Tested], cyberssentinel_cascade_combined[dataset] = "KDDTest-21")
+
+TestPlus Attacks =
+CALCULATE([Actual Attacks], cyberssentinel_cascade_combined[dataset] = "KDDTest+")
+
+Test21 Attacks =
+CALCULATE([Actual Attacks], cyberssentinel_cascade_combined[dataset] = "KDDTest-21")
+
+TestPlus Accuracy =
+CALCULATE([Avg Cascade Accuracy], cyberssentinel_cascade_combined[dataset] = "KDDTest+")
+
+Test21 Accuracy =
+CALCULATE([Avg Cascade Accuracy], cyberssentinel_cascade_combined[dataset] = "KDDTest-21")
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ATTACK CATEGORY ANALYSIS (STAGE 2)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Unique Attack Types =
+DISTINCTCOUNT(cyberssentinel_cascade_combined[AttackCategory])
+
+Most Common Attack =
+VAR MostCommon = TOPN(1, VALUES(cyberssentinel_cascade_combined[AttackCategory]), 
+    COUNTA(cyberssentinel_cascade_combined[AttackCategory]), DESC)
+RETURN
+MAXX(MostCommon, cyberssentinel_cascade_combined[AttackCategory])
+
+Rarest Attack =
+VAR MostRare = TOPN(1, VALUES(cyberssentinel_cascade_combined[AttackCategory]), 
+    COUNTA(cyberssentinel_cascade_combined[AttackCategory]), ASC)
+RETURN
+MAXX(MostRare, cyberssentinel_cascade_combined[AttackCategory])
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FORMATTING / DISPLAY MEASURES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Accuracy Formatted =
+FORMAT([Avg Cascade Accuracy], "0.00%")
+
+Precision Formatted =
+FORMAT([Cascade Precision], "0.00%")
+
+Recall Formatted =
+FORMAT([Cascade Recall], "0.00%")
+
+Attack Recall Formatted =
+FORMAT([Cascade Attack Recall], "0.00%")
+
+FPR Formatted =
+FORMAT([Cascade FPR], "0.00%")
+
+Records Formatted =
+FORMAT([Total Records Tested], "#,##0")

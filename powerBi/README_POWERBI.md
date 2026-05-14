@@ -197,7 +197,7 @@ If you're new to Power BI:
 ## ✅ Checklist Before Building
 
 - [ ] Power BI Desktop installed
-- [ ] `cyberssentinel_powerbi_combined.csv` exists in the project root
+- [ ] `cyberssentinel_powerbi_combined.csv` exists in the `powerBi` folder
 - [ ] `CyberSentinel_Theme.json` exists
 - [ ] `PowerQuery_M_Code.txt` has the correct file path (line 9)
 - [ ] `DAX_Measures.txt` is ready to copy/paste

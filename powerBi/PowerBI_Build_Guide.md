@@ -1,400 +1,174 @@
-# CyberSentinel Power BI Dashboard — Complete Build Guide
+# CyberSentinel Power BI Dashboard - Cascade-Only Build Guide
 
-This guide turns your prediction CSVs and training data into a polished Power BI dashboard in about **20 minutes**. Follow each step in order.
+This guide is for your current requirement: final two-stage cascade analytics only.
 
----
+It uses:
+- `cyberssentinel_cascade_combined.csv` (final inference-level rows)
+- `CascadeModelSummary.csv` (stage-wise validation summary)
+- `CASCADE_DAX_Measures.txt` (cascade measures)
 
-## What You'll Build
+## 1) Files To Use
 
-A 5-page Power BI dashboard with:
-- **Page 1** – Executive Overview (KPIs, detection accuracy, threat distribution)
-- **Page 2** – Data Preprocessing (class balance, attack category skew, preprocessing pipeline)
-- **Page 3** – Model Comparison (RandomForest vs SVM vs XGBoost accuracy, metrics)
-- **Page 4** – Cascade Classification (Stage 1 binary detection, Stage 2 attack-type breakdown)
-- **Page 5** – Attack Type Deep Dive (attack category distribution, misclassification heatmap)
+Load only these files from `powerBi/`:
+1. `cyberssentinel_cascade_combined.csv`
+2. `CascadeModelSummary.csv`
+3. `CASCADE_DAX_Measures.txt`
+4. `CyberSentinel_Theme.json`
 
----
+Do not use `DAX_Measures.txt` for this cascade-only dashboard.
 
-## Prerequisites
+## 2) Critical Field Mapping (Use This Exactly)
 
-- **Power BI Desktop** (free) — download from https://powerbi.microsoft.com/desktop/
-- The 5 files included in this package:
-  1. `cyberssentinel_powerbi_combined.csv` — the consolidated reporting dataset
-  2. `CyberSentinel_Theme.json` — security-focused color theme (green=normal, red=threat)
-  3. `PowerQuery_M_Code.txt` — data prep and transformation code
-  4. `DAX_Measures.txt` — all KPI and classification metrics measures
-  5. `PowerBI_Build_Guide.md` — this file
+If you cannot find fields in visuals, use this mapping:
 
----
-
-## STEP 1 — Apply the Theme
-
-1. Open Power BI Desktop → blank report
-2. **View** tab (top ribbon) → **Themes** dropdown → **Browse for themes**
-3. Select `CyberSentinel_Theme.json` → Open
-4. The theme applies instantly — your visuals will use the correct threat/normal color palette
-
----
-
-## STEP 2 — Load the Data with Power Query
-
-1. **Home** tab → **Get data** → **Blank query**
-2. In the Power Query Editor that opens, click **Advanced Editor** (Home tab)
-3. Delete everything inside, paste the entire contents of `PowerQuery_M_Code.txt`
-4. **Update line 9** — change the file path to where your CSV lives:
-   ```
-   Source = Csv.Document(File.Contents("C:\Users\YourName\CyberSentinel\cyberssentinel_powerbi_combined.csv")...
-   ```
-5. Click **Done**
-6. Right-click the query in the left pane → **Rename** → call it `cyberssentinel`
-7. Click **Close & Apply** (top-left)
-
-You now have a table with all original columns PLUS computed columns: Year, Month, MonthName, Quarter, Dataset, ModelAlgorithm, IsCorrect, and metrics for categorization.
-
----
-
-## STEP 3 — Set Sort Order Properties
-
-This makes your charts order things correctly (algorithm names, datasets, attack categories).
-
-1. In the **Data view** (left sidebar, table icon), click on `ModelAlgorithm` column
-2. **Column tools** tab → **Sort by column** → select `ModelAlgorithmSort`
-3. Click on `Dataset` column → **Sort by column** → select `DatasetSort`
-4. Click on `AttackCategory` column → **Sort by column** → select `CategorySort` (if that column exists)
-5. Click on `PredictionLabel` column → **Sort by column** → select `PredictionSort`
-
----
-
-## STEP 4 — Create the Measures Table
-
-Keeps your Fields pane organized and measures separate from raw data.
-
-1. **Home** tab → **Enter data** → name the table `_Measures` → leave the row blank → **Load**
-2. In the Fields pane, you'll see `_Measures` with one column. Hide that column (right-click → Hide).
-3. Click `_Measures` to select it as your active table
-4. Open `DAX_Measures.txt`. For each measure block:
-   - **Modeling** tab → **New measure**
-   - Replace the formula bar text with the entire measure (name + `=` + formula)
-   - Press Enter
-5. Repeat for all ~35 measures. (Takes ~5–7 minutes, but they're permanent and reusable across all pages.)
-
----
-
-## STEP 5 — Build Page 1: Executive Overview
-
-Rename **Page 1** at the bottom to **Overview**.
-
-### KPI Cards (7 cards across the top)
-
-For each card: **Visualizations** pane → **Card** visual → drag the measure into "Fields"
-
-| Card # | Measure | Title (set in Format → Title) |
-|---|---|---|
-| 1 | `Total Records Tested` | Total Test Records |
-| 2 | `Total Attacks Predicted` | Attacks Detected |
-| 3 | `Avg Test Accuracy` | Average Accuracy |
-| 4 | `Avg Attack Recall` | Attack Recall Rate |
-| 5 | `Avg FPR` | False Positive Rate |
-| 6 | `Best Model` | Best Performing Model |
-| 7 | `Unique Attack Types` | Attack Categories |
-
-For each card: Format → **Callout value** → set conditional formatting:
-- Green for good metrics (Accuracy, Recall, Total Records)
-- Red for bad metrics (FPR)
-
-### Pie Chart: Normal vs Attack Distribution
-
-- **Visualization**: Pie chart
-- **Legend**: `PredictionLabel` (or "prediction_numeric" if using raw predictions)
-- **Values**: `Count of Records`
-- **Format**: Data labels show percentages
-
-### Clustered Bar Chart: Accuracy by Model (on selected dataset)
-
-- **Visualization**: Clustered bar chart
-- **Axis**: `ModelAlgorithm`
-- **Values**: `Avg Accuracy`, `Avg Attack Recall`
-- **Legend**: Shows both metrics side-by-side
-
----
-
-## STEP 6 — Build Page 2: Data Preprocessing
-
-Rename **Page 2** to **Preprocessing**.
-
-### KPI Cards (Top row)
-
-| Measure | Title |
+| Old/Wrong Name | Correct Field In CSV |
 |---|---|
-| `Total Records` | Total Records |
-| `Normal Count` | Normal Samples |
-| `Attack Count` | Attack Samples |
-| `Attack Rate %` | Attack Rate |
-| `Imbalance Ratio` | Class Imbalance |
-
-### Stacked Bar Chart: Training Data Label Distribution
-
-- **Visualization**: Stacked column chart
-- **X-axis**: `Dataset`
-- **Y-axis**: `Count of Records`  
-- **Legend**: `AQI_Category` or `LabelCategory` (Good/Moderate/Unhealthy)
-- Shows raw label distribution before binary conversion
-
-### Bar Chart: Attack Category Frequency (Top 10)
-
-- **Visualization**: Horizontal bar chart
-- **Category**: `AttackCategory`
-- **Values**: `Count of Attack Records`
-- **Sort**: Descending by count
-- Shows that Neptune, Ipsweep dominate; other attacks are rare
-
-### Text Box: Preprocessing Pipeline
-
-Create a text box listing the preprocessing steps:
-```
-PREPROCESSING PIPELINE
-1. Load raw KDD data
-2. Remove duplicates
-3. Impute missing values (median for numeric, mode for categorical)
-4. Encode categorical features (protocol_type, service, flag → one-hot)
-5. Convert labels to binary (Normal=0, Attack=1)
-6. Balance dataset (undersample majority class)
-7. Split: 80% train, 20% validation
-```
-
----
-
-## STEP 7 — Build Page 3: Model Comparison
-
-Rename **Page 3** to **Model Comparison**.
-
-### KPI Row: By-Model Metrics
-
-Create 3 sets of 4 KPI cards (one set per model: RandomForest, SVM, XGBoost):
-- Model Accuracy
-- Attack Recall
-- False Positive Rate
-- Total Predictions
-
-Use **Slicers** on this page:
-- **Dataset**: Dropdown to switch between Test-21 and Test+
-- **Model**: Dropdown to highlight a specific model
-
-### Clustered Column Chart: Accuracy by Model & Dataset
-
-- **Visualization**: Clustered column chart
-- **X-axis**: `ModelAlgorithm`
-- **Y-axis**: `Avg Accuracy`
-- **Legend**: `Dataset`
-- Shows which model generalizes best across both test sets
-
-### Matrix/Table: Detailed Model Metrics
-
-- **Visualization**: Table or Matrix
-- **Rows**: `ModelAlgorithm`
-- **Values**: 
-  - `Avg Accuracy`
-  - `Avg Precision`
-  - `Avg Recall`
-  - `Avg F1_Score`
-  - `Avg Attack Recall`
-  - `Avg FPR`
-
-Conditional formatting: Green for high values (Accuracy, Recall), Red for high FPR.
-
-### Slicer (Right side)
-
-- **Slicer**: `Dataset` — allows filtering between KDDTest+ and KDDTest-21
-- All visuals above update when you change the slicer
-
----
-
-## STEP 8 — Build Page 4: Cascade Classification
-
-Rename **Page 4** to **Cascade Analysis** (focuses on XGBoost two-stage flow).
-
-### KPI Cards (Top row)
-
-These show cascade-specific metrics from the stage1 and stage2 calibration:
-
-| Measure | Title |
-|---|---|
-| `Stage1 Binary Accuracy` | Stage 1 Accuracy |
-| `Stage1 Attack Detection Rate` | Stage 1 Recall |
-| `Stage2 Category Accuracy` | Stage 2 Accuracy |
-| `Cascade FPR` | Cascade FPR |
-
-### Flow Diagram: Decision Path (Text Box or Custom Visual)
-
-Create a visual explanation:
-```
-STAGE 1 (Binary: Normal vs Attack)
-├─ Input: Network traffic features
-├─ Output: P(Attack) probability
-├─ Threshold T_low: If P < T_low → Predict NORMAL (confident)
-├─ Threshold T_strong: If P ≥ T_strong → Proceed to Stage 2
-└─ Else: Use Stage 2 confidence to decide
-
-STAGE 2 (Multi-class: Attack Category)
-├─ Input: Same features
-├─ Output: P(Category) for 4 categories (DoS, Probe, R2L, U2R)
-├─ Decision: Max confidence, margin, threshold
-└─ Final: Specific attack type (Neptune, Ipsweep, etc.)
-```
-
-### Stacked Column Chart: Stage 1 Decision Distribution
-
-- **Visualization**: Stacked column chart
-- **X-axis**: `DecisionPath` (Stage1_Normal, Stage2_Attack_Strong, Stage2_Confident, etc.)
-- **Y-axis**: `Count of Records`
-- **Legend**: `PredictionLabel` (Normal, Attack)
-
-Shows how many records follow each decision path through the cascade.
-
-### Table: Stage 2 Attack Category Breakdown
-
-- **Visualization**: Table
-- **Rows**: `Stage2PredCategory` (attack type)
-- **Values**:
-  - `Count of Records`
-  - `% of Attacks Classified` (custom measure: count / total attacks)
-  - `Confidence` (avg Stage2_TopConfidence)
-
----
-
-## STEP 9 — Build Page 5: Attack Type Deep Dive
-
-Rename **Page 5** to **Attack Analysis**.
-
-### KPI Cards (Top row)
-
-| Measure | Title |
-|---|---|
-| `Unique Attack Types` | Total Attack Types |
-| `Most Common Attack` | Most Frequent Attack |
-| `Rarest Attack Type` | Rarest Attack |
-| `Category Accuracy` | Attack Classification Accuracy |
-
-### Horizontal Bar Chart: Attack Type Frequency (Top 15)
-
-- **Visualization**: Horizontal bar chart
-- **Category**: `AttackCategory` (Neptune, Ipsweep, Satan, etc.)
-- **Values**: `Count of Attack Records`
-- **Sort**: Descending
-- Shows the heavy imbalance (Neptune ~33% of attacks)
-
-### Clustered Bar Chart: Correct vs Incorrect by Attack Type (Top 10)
-
-- **Visualization**: Clustered bar chart
-- **Category**: Top 10 attack types by frequency
-- **Series 1**: Count where `IsCorrect = TRUE`
-- **Series 2**: Count where `IsCorrect = FALSE`
-- Shows which attack types are hardest to classify
-
-### Heatmap: Attack Type Confusion (Actual vs Predicted)
-
-- **Visualization**: Matrix or custom heatmap
-- **Rows**: `ActualLabel` (true attack type)
-- **Columns**: `PredictionLabel` (predicted attack type)
-- **Values**: `Count of Records` (color intensity)
-- **Format**: Conditional formatting (red=high misclassification)
-
-This is the most powerful visual: shows if the model confuses Neptune with Ipsweep, etc.
-
----
-
-## STEP 10 — Add Interactivity (Optional but Recommended)
-
-### Add Slicers to Page 1 (Executive Overview)
-
-- **Slicer 1**: `ModelAlgorithm` (RandomForest, SVM, XGBoost)
-- **Slicer 2**: `Dataset` (KDDTest+, KDDTest-21)
-- **Slicer 3**: `Year` (if your data spans multiple years)
-
-All cards and charts update dynamically.
-
-### Drillthrough Detail Page
-
-1. **Insert** → **New page** → name it `Details`
-2. Add a **Table** visual with all columns:
-   - Original features (protocol_type, service, src_bytes, dst_bytes, etc.)
-   - actual_label, prediction_numeric, correct_prediction
-   - model_used, dataset
-3. On Page 1, right-click any visual → **Drillthrough** → **Add drillthrough field** → `protocol_type` or `ModelAlgorithm`
-4. Users can now right-click a bar in Page 1 and drill to the details table filtered to that model/dataset
-
----
-
-## STEP 11 — Format and Polish
-
-### Colors & Conditional Formatting
-
-- **Normal/Harmless**: Green (#2ECC71)
-- **Attack/Threat**: Red (#E74C3C)
-- **Neutral/Metrics**: Blue or Gray
-
-All your visuals are already themed by `CyberSentinel_Theme.json`.
-
-### Add Report Title
-
-- **Insert** → **Text box** at the top
-- Type: `CyberSentinel — Network Intrusion Detection Dashboard`
-- Font: 24pt, bold, color: dark gray
-
-### Publish to Power BI Service (Optional)
-
-1. **File** → **Publish** → sign in with your Microsoft account
-2. Select a workspace
-3. Your dashboard is now live and can be shared with your team
-
----
-
-## QUICK REFERENCE — What Each Measure Does
-
-| Measure | Purpose |
-|---|---|
-| `Total Records Tested` | Count of all test predictions |
-| `Total Attacks Predicted` | Sum of predictions = "attack" or 1 |
-| `Total Normal Predicted` | Sum of predictions = "normal" or 0 |
-| `Avg Test Accuracy` | % of correct predictions |
-| `Avg Attack Recall` | % of actual attacks correctly detected |
-| `Avg Precision` | % of predicted attacks that were actually attacks |
-| `Avg FPR` | % of normal traffic incorrectly flagged as attacks |
-| `Best Model` | Algorithm with highest accuracy |
-| `Unique Attack Types` | Count of distinct attack categories |
-| `Attack Rate %` | Total attacks / total records |
-| `Stage1 Binary Accuracy` | Cascade Stage 1 (Normal vs Attack) accuracy |
-| `Stage2 Category Accuracy` | Cascade Stage 2 (Attack type) accuracy |
-| `Cascade FPR` | False positive rate of final cascade predictions |
-
----
-
-## TROUBLESHOOTING
-
-**Q: Slicer doesn't update visuals**  
-A: Make sure the slicer field is in the same table or has a relationship. Check **Model view** (Modeling tab) → ensure relationships exist.
-
-**Q: DAX measure shows error**  
-A: Check that table names and column names exactly match your CSV columns. DAX is case-sensitive.
-
-**Q: CSV data doesn't load**  
-A: Verify the file path in Step 2 line 9. Use full absolute path, not relative.
-
-**Q: Colors don't match the theme**  
-A: Re-apply the theme in Step 1. Clear your browser cache if using Power BI Service.
-
----
-
-## NEXT STEPS
-
-1. **Share the report**: File → Export → PDF (for executives) or Publish (for interactive sharing)
-2. **Add more pages**: Duplicate Page 3 to compare different time periods or regions (if your data includes location)
-3. **Set up alerts**: Power BI Service → set alerts on key metrics (e.g., "notify if FPR > 10%")
-4. **Schedule refresh**: If using Power BI Service, set the CSV to auto-refresh daily
-
----
-
-**Total build time: 15–25 minutes**  
-**Result: A professional, interactive dashboard ready for stakeholder presentations**
-
-Good luck! 🛡️
+| `ModelAlgorithm` | `model_used` |
+| `Dataset` (capitalized transformed col) | `dataset` |
+| `PredictionLabel` | `final_prediction` |
+| `ActualLabel` | `label` |
+| `DecisionPath` | `decision_path` |
+| `IsCorrect` | create measure or use `Accuracy` |
+| `Year`, `Month` | not available in this dataset |
+| `AQI_Category`, `LabelCategory` | not available in this project |
+
+Available columns in `cyberssentinel_cascade_combined.csv`:
+- `label`, `actual_binary`, `AttackCategory`
+- `stage1_decision`, `stage1_p_attack`
+- `stage2_pred_category`, `stage2_top1_conf`, `stage2_margin`
+- `final_prediction`, `prediction_numeric`, `decision_path`
+- `model_used`, `dataset`
+- `Accuracy`, `Precision`, `Recall`, `F1Score`, `FalsePositiveRate`, `AttackRecall`
+
+## 3) Load Data (Fresh)
+
+1. Open Power BI Desktop.
+2. Remove old queries/tables that were based on non-cascade flow.
+3. Home -> Get data -> Text/CSV -> load `cyberssentinel_cascade_combined.csv`.
+4. Rename this table exactly to `cyberssentinel_cascade_combined`.
+5. Home -> Get data -> Text/CSV -> load `CascadeModelSummary.csv`.
+6. Rename this table exactly to `CascadeModelSummary`.
+7. Ensure numeric columns are numeric types:
+   - In `cyberssentinel_cascade_combined`: `Accuracy`, `Precision`, `Recall`, `F1Score`, `FalsePositiveRate`, `AttackRecall`, `stage1_p_attack`, `stage2_top1_conf`, `stage2_margin`
+   - In `CascadeModelSummary`: `Validation Accuracy`, `Validation F1 Score`, `Macro F1`, `False Positive Rate (Normal)`, `Attack Recall`, `TN`, `FP`, `FN`, `TP`
+
+## 4) Create Measures
+
+1. Create `_Measures` table (Home -> Enter Data -> name `_Measures` -> Load).
+2. Open `CASCADE_DAX_Measures.txt`.
+3. Add all measures one by one (Modeling -> New measure).
+4. If any measure errors, verify table names are exactly:
+   - `cyberssentinel_cascade_combined`
+   - `CascadeModelSummary`
+
+## 5) Build Visuals With Existing Fields Only
+
+## Page 1 - Final Cascade Overview
+
+KPI cards:
+- `Total Records Tested`
+- `Actual Attacks`
+- `Avg Cascade Accuracy`
+- `Cascade Precision`
+- `Cascade Attack Recall`
+- `Cascade FPR`
+
+Pie chart:
+- Legend: `final_prediction`
+- Values: Count of `label`
+
+Clustered bar chart:
+- Axis: `model_used`
+- Values: `Avg Cascade Accuracy`, `Cascade Attack Recall`
+
+Slicers:
+- `dataset`
+- `model_used`
+
+## Page 2 - Stage 1 Decision Flow
+
+Stacked column:
+- Axis: `decision_path`
+- Values: Count of `label`
+- Legend: `dataset` or `model_used`
+
+Table:
+- Columns: `stage1_decision`, `stage1_p_attack`, `decision_path`, `final_prediction`, `label`
+
+Cards:
+- `Stage1 Normal Path`
+- `Stage1 Attack Path`
+- `% Stage1 to Stage2`
+- `Stage2 Reverted Normal`
+
+## Page 3 - Model Comparison (Final Cascade)
+
+Matrix (Rows = `model_used`):
+- `Avg Cascade Accuracy`
+- `Cascade Precision`
+- `Cascade Recall`
+- `Cascade F1 Score`
+- `Cascade Attack Recall`
+- `Cascade FPR`
+
+Optional cards:
+- `RF Accuracy`, `RF Precision`, `RF Attack Recall`
+- `SVM Accuracy`, `SVM Precision`, `SVM Attack Recall`
+- `XGBoost Accuracy`, `XGBoost Precision`, `XGBoost Attack Recall`
+
+## Page 4 - Stage Validation Summary
+
+Use `CascadeModelSummary` table.
+
+KPI cards:
+- `Stage1 Binary Accuracy`
+- `Stage1 Attack Detection Rate`
+- `Stage2 Category Accuracy`
+- `Cascade FPR`
+
+Table (Rows: `Model`, Filter: `Stage` = `Stage 2`):
+- `Macro F1`
+- `Remarks`
+
+Clustered chart (Stage 1 only):
+- Axis: `Model`
+- Values: `Attack Recall`, `False Positive Rate (Normal)`
+- Visual filter: `Stage = Stage 1`
+
+## Page 5 - Attack Category Analysis
+
+Bar chart:
+- Axis: `AttackCategory`
+- Values: Count of `label`
+
+Matrix:
+- Rows: `AttackCategory`
+- Columns: `final_prediction`
+- Values: Count of `label`
+
+Cards:
+- `Unique Attack Types`
+- `Most Common Attack`
+- `Rarest Attack`
+
+## 6) Why Your Earlier Fields Were Missing
+
+Those fields came from an older transformed schema or unrelated template sections.
+Your current cascade CSV does not contain:
+- `ModelAlgorithm`
+- `PredictionLabel`
+- `Year`
+- `AQI_Category`
+- `LabelCategory`
+
+Use the mapping section above to replace them everywhere.
+
+## 7) Quick Fix Checklist (If You Still Get "Field Not Found")
+
+1. Confirm you loaded `cyberssentinel_cascade_combined.csv`, not `cyberssentinel_powerbi_combined.csv`.
+2. Confirm table name is exactly `cyberssentinel_cascade_combined`.
+3. Confirm `CASCADE_DAX_Measures.txt` is used, not `DAX_Measures.txt`.
+4. In Fields pane, verify `decision_path` exists before creating decision-path visuals.
+5. Refresh after any query rename or type conversion.
+
+If you share the exact missing field name from Power BI, I can map it immediately to the correct one.

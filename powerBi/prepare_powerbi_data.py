@@ -20,12 +20,13 @@ from pathlib import Path
 # CONFIGURATION
 # ============================================================================
 
-PROJECT_ROOT = Path(__file__).parent
+# Use the repository root (parent of this powerBi folder) so data/test is found
+PROJECT_ROOT = Path(__file__).parent.parent
 TEST_DATA_DIR = PROJECT_ROOT / "data" / "test"
 TRAIN_DATA_DIR = PROJECT_ROOT / "data" / "train" / "analysis_output"
 CASCADE_DIR = PROJECT_ROOT / "model" / "cascade" / "xgboost"
 
-OUTPUT_CSV = PROJECT_ROOT / "cyberssentinel_powerbi_combined.csv"
+OUTPUT_CSV = Path(__file__).parent / "cyberssentinel_powerbi_combined.csv"
 
 # Attack category mapping (from cascade_common.py)
 ATTACK_TO_CATEGORY = {
@@ -127,6 +128,18 @@ def add_metrics_columns(df):
         df["prediction_numeric"] = None
     if "correct_prediction" not in df.columns:
         df["correct_prediction"] = 0
+
+    # Ensure correct_prediction is numeric 0/1 for DAX filters
+    if "correct_prediction" in df.columns:
+        df["correct_prediction"] = (
+            df["correct_prediction"]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .map({"true": 1, "false": 0, "1": 1, "0": 0})
+            .fillna(0)
+            .astype(int)
+        )
     
     # Convert actual label to binary
     df["actual_binary"] = df["actual_label"].apply(convert_label_to_binary)
@@ -193,12 +206,74 @@ def prepare_training_data_summary():
     
     return summary_rows
 
+def normalize_decision_path(decision_path_str):
+    """
+    Normalize decision_path from cascade CSV to match DAX expectations
+    Examples:
+    - "stage1_normal" → "Stage1_Normal"
+    - "stage2_attack_strong_stage1" → "Stage2_Attack_Strong_Stage1"
+    - "stage2_reverted_normal" → "Stage2_Reverted_Normal"
+    """
+    if pd.isna(decision_path_str):
+        return None
+    
+    dp = str(decision_path_str).strip().lower()
+    
+    # Map cascade decision paths to DAX-compatible names
+    mapping = {
+        "stage1_normal": "Stage1_Normal",
+        "attack_path": "Stage2_Attack_Path",
+        "stage2_attack_confident": "Stage2_Attack_Confident",
+        "stage2_attack_strong_stage1": "Stage2_Attack_Strong_Stage1",
+        "stage2_reverted_normal": "Stage2_Reverted_Normal",
+    }
+    
+    # Try direct mapping first
+    if dp in mapping:
+        return mapping[dp]
+    
+    # If not found, convert to title case with underscores
+    return "_".join(word.capitalize() for word in dp.split("_"))
+
+def merge_cascade_decision_paths():
+    """
+    Load decision_path from cascade CSVs and create a mapping.
+    Returns a dict: {(dataset_name, model_name, row_index): decision_path}
+    """
+    cascade_map = {}
+    
+    cascade_files = [
+        ("KDDTest+_cascade_randomforest.csv", "KDDTest+", "randomforest"),
+        ("KDDTest+_cascade_svm.csv", "KDDTest+", "svm"),
+        ("KDDTest+_cascade_xgboost.csv", "KDDTest+", "xgboost"),
+        ("KDDTest-21_cascade_randomforest.csv", "KDDTest-21", "randomforest"),
+        ("KDDTest-21_cascade_svm.csv", "KDDTest-21", "svm"),
+        ("KDDTest-21_cascade_xgboost.csv", "KDDTest-21", "xgboost"),
+    ]
+    
+    for filename, dataset_name, model_name in cascade_files:
+        filepath = TEST_DATA_DIR / filename
+        
+        if filepath.exists():
+            print(f"   Loading cascade for {model_name} on {dataset_name}...")
+            cascade_df = pd.read_csv(filepath, usecols=["decision_path"])
+            
+            # Normalize decision paths and store with key (dataset, model, row_idx)
+            for idx, row in cascade_df.iterrows():
+                key = (dataset_name, model_name, idx)
+                cascade_map[key] = normalize_decision_path(row["decision_path"])
+        else:
+            print(f"   ⚠️ Cascade file not found: {filename}")
+    
+    return cascade_map
+
 def merge_all_predictions():
     """
-    Merge all prediction CSVs into a single dataframe
+    Merge all prediction CSVs into a single dataframe and attach cascade DecisionPath
     """
     
     all_predictions = []
+    row_counter = {}  # Track row index for each (dataset, model) pair
     
     # Define prediction files to load
     prediction_files = [
@@ -210,6 +285,10 @@ def merge_all_predictions():
         ("KDDTest-21_predictions_xgboost.csv", "KDDTest-21", "xgboost"),
     ]
     
+    # Load cascade decision paths first
+    print("   Loading cascade decision paths...")
+    cascade_map = merge_cascade_decision_paths()
+    
     for filename, dataset_name, model_name in prediction_files:
         filepath = TEST_DATA_DIR / filename
         
@@ -220,6 +299,17 @@ def merge_all_predictions():
             # Add metadata columns
             df["dataset"] = dataset_name
             df["model_used"] = model_name
+            
+            # Add DecisionPath from cascade map
+            decision_paths = []
+            row_counter[(dataset_name, model_name)] = 0
+            
+            for idx in range(len(df)):
+                key = (dataset_name, model_name, idx)
+                cascade_path = cascade_map.get(key)
+                decision_paths.append(cascade_path)
+            
+            df["DecisionPath"] = decision_paths
             
             all_predictions.append(df)
         else:
@@ -243,9 +333,10 @@ def main():
     print("=" * 70)
     
     # Step 1: Merge all predictions
-    print("\n[1/3] Merging all prediction CSVs...")
+    print("\n[1/3] Merging all prediction CSVs and cascade decision paths...")
     df = merge_all_predictions()
     print(f"   ✓ Combined {len(df)} records from all models and datasets")
+    print(f"   ✓ Added DecisionPath from cascade inference")
     
     # Step 2: Add metrics columns
     print("\n[2/3] Computing metrics columns...")
@@ -270,7 +361,7 @@ def main():
     metadata_columns = [
         "actual_label", "actual_binary", "AttackCategory",
         "prediction_numeric", "correct_prediction",
-        "model_used", "dataset"
+        "model_used", "dataset", "DecisionPath"
     ]
     
     metrics_columns = [
@@ -295,14 +386,17 @@ def main():
     print(f"Models:                {df['model_used'].nunique()} ({', '.join(df['model_used'].unique())})")
     print(f"Datasets:              {df['dataset'].nunique()} ({', '.join(df['dataset'].unique())})")
     print(f"Average Accuracy:      {df['Accuracy'].mean():.2%}")
-    print(f"Average Attack Recall: {df['AttackRecall'].mean():.2%}")
     print(f"Average FPR:           {df['FalsePositiveRate'].mean():.2%}")
-    
+
     actual_attacks = (df["actual_binary"] == 1).sum()
     actual_normal = (df["actual_binary"] == 0).sum()
+    true_positives = ((df["actual_binary"] == 1) & (df["prediction_numeric"] == 1)).sum()
+    avg_attack_recall = (true_positives / actual_attacks) if actual_attacks > 0 else 0
+
     print(f"Actual Attacks:        {actual_attacks:,}")
     print(f"Actual Normal:         {actual_normal:,}")
     print(f"Attack Rate:           {actual_attacks / len(df):.2%}")
+    print(f"Attack Recall (TP/Att): {avg_attack_recall:.2%}")
     
     print("\n" + "=" * 70)
     print("✅ Power BI data preparation complete!")
